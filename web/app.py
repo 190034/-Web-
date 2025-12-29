@@ -4,6 +4,7 @@ from flask import (
 )
 import pyodbc
 import os
+import subprocess
 
 
 # Flask 应用初始化
@@ -19,8 +20,7 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
-# 数据库连接（SQL Server 2022）
-# 使用 Windows 身份验证
+# 数据库连接
 
 conn = pyodbc.connect(
     "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -29,9 +29,6 @@ conn = pyodbc.connect(
     "Trusted_Connection=yes;"
 )
 cursor = conn.cursor()
-
-
-# 首页（可选）
 
 @app.route('/')
 def index():
@@ -71,7 +68,6 @@ def login():
             "SELECT * FROM users WHERE username=? AND password=?",
             (username, password)
         )
-        user = cursor.fetchone()
 
         if user:
             session['user'] = username
@@ -161,8 +157,29 @@ def delete(filename):
 
     return redirect(url_for('files'))
 
+# 漏洞测试接口
+import subprocess
+
+@app.route('/ping')
+def ping():
+    ip = request.args.get('ip')
+
+    result = subprocess.run(
+        ["ping", ip],
+        shell=False,
+        capture_output=True,
+        text=True
+    )
+
+    return "<pre>" + result.stdout + "</pre>"
+
 
 # 启动 Web 服务
 
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+app.run(
+    host='localhost',
+    port=5000,
+    debug=False,
+    use_reloader=False,
+
+)
